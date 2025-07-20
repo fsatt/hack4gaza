@@ -4,16 +4,22 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.bitchat.android.model.PatientRecord
 import com.bitchat.android.model.MedicalUpdate
 import com.bitchat.android.model.PatientStatus
 import com.bitchat.android.model.Priority
 import com.bitchat.android.model.PatientHistoryEntry
+import com.bitchat.android.storage.PatientStorageManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.*
 
 /**
  * ViewModel for managing patient data and medical records
  * Handles patient operations while preserving existing chat functionality
+ * Now includes persistent storage support
  */
 class PatientViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -31,9 +37,39 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
     
-    // Sample data for demonstration
+    // Storage manager
+    private val storageManager = PatientStorageManager.getInstance(application)
+    
+    // Initialize data from storage or samples if storage is empty
     init {
-        loadSampleData()
+        loadDataFromStorage()
+    }
+    
+    private fun loadDataFromStorage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.postValue(true)
+            
+            val storedPatients = storageManager.loadPatients()
+            val storedUpdates = storageManager.loadMedicalUpdates()
+            
+            withContext(Dispatchers.Main) {
+                if (storedPatients.isNotEmpty()) {
+                    _patients.value = storedPatients
+                    _medicalUpdates.value = storedUpdates
+                } else {
+                    // If no stored data exists, load sample data
+                    loadSampleData()
+                }
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    private fun saveDataToStorage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _patients.value?.let { storageManager.savePatients(it) }
+            _medicalUpdates.value?.let { storageManager.saveMedicalUpdates(it) }
+        }
     }
     
     private fun loadSampleData() {
@@ -116,6 +152,9 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         )
         
         _medicalUpdates.value = sampleUpdates
+        
+        // Save sample data to storage
+        saveDataToStorage()
     }
     
     fun selectPatient(patient: PatientRecord) {
@@ -127,8 +166,10 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
     }
     
     fun addPatient(patient: PatientRecord) {
-        val currentPatients = _patients.value ?: emptyList()
-        _patients.value = currentPatients + patient
+        val currentPatients = _patients.value.orEmpty().toMutableList()
+        currentPatients.add(patient)
+        _patients.value = currentPatients
+        saveDataToStorage()
     }
     
     fun updatePatient(updatedPatient: PatientRecord) {
@@ -143,6 +184,7 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
                 patient
             }
         }
+        saveDataToStorage()
     }
     
     /**
@@ -166,6 +208,7 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
             )
             
             updatePatient(updatedPatient)
+            // Note: saveDataToStorage() is called inside updatePatient
         }
     }
     
@@ -173,6 +216,7 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         val currentUpdates = _medicalUpdates.value ?: emptyMap()
         val patientUpdates = currentUpdates[update.patientId] ?: emptyList()
         _medicalUpdates.value = currentUpdates + (update.patientId to (patientUpdates + update))
+        saveDataToStorage()
     }
     
     fun getPatientById(patientId: String): PatientRecord? {
@@ -219,5 +263,7 @@ class PatientViewModel(application: Application) : AndroidViewModel(application)
         if (_selectedPatient.value?.patientId == patientId || _selectedPatient.value?.id == patientId) {
             clearSelectedPatient()
         }
+        
+        saveDataToStorage()
     }
 }

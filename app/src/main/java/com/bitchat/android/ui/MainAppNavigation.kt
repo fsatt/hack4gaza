@@ -93,6 +93,11 @@ fun MainAppNavigation(
                                 },
                                 onNavigateToAdd = {
                                     navigationStack = navigationStack + NavigationState.AddPatient
+                                },
+                                onSyncPressed = {
+                                    // Convert patient data to JSON and send to chat 
+                                    val patientsJson = patientViewModel.getPatientsAsJson()
+                                    chatViewModel.sendMessage("Patient Records Synced: $patientsJson")
                                 }
                             )
                         }

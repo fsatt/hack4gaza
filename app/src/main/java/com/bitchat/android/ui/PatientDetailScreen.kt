@@ -268,6 +268,7 @@ fun PatientInfoCard(
                         PatientStatus.STABLE -> Color(0xFF4CAF50)
                         PatientStatus.TREATED -> Color(0xFF2196F3)
                         PatientStatus.TRANSFERRED -> Color(0xFFFF9800)
+                        PatientStatus.DECEASED -> Color(0xFF4CAF50)
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -579,12 +580,14 @@ fun PatientActionsCard(
                                 PatientStatus.CRITICAL -> Color(0xFFFF5722).copy(alpha = 0.2f)
                                 PatientStatus.TREATED -> Color(0xFF2196F3).copy(alpha = 0.2f)
                                 PatientStatus.TRANSFERRED -> Color(0xFFFF9800).copy(alpha = 0.2f)
+                                PatientStatus.DECEASED -> Color(0xFF424242).copy(alpha = 0.2f)
                             },
                             activeContentColor = when (status) {
                                 PatientStatus.STABLE -> Color(0xFF4CAF50)
                                 PatientStatus.CRITICAL -> Color(0xFFFF5722)
                                 PatientStatus.TREATED -> Color(0xFF2196F3)
                                 PatientStatus.TRANSFERRED -> Color(0xFFFF9800)
+                                PatientStatus.DECEASED -> Color(0xFF424242)
                             }
                         )
                     ) {

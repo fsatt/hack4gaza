@@ -184,6 +184,15 @@ fun PatientDataSection(
                     colorScheme = colorScheme,
                     modifier = Modifier.weight(1f)
                 )
+
+                StatusCard(
+                    title = "Deceased",
+                    value = patients.count { it.status == PatientStatus.DECEASED }.toString(),
+                    icon = Icons.Default.CheckCircle,
+                    color = Color(0xFF4CAF50),
+                    colorScheme = colorScheme,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -309,6 +318,7 @@ fun PatientSummaryItem(
                 PatientStatus.STABLE -> Color(0xFF4CAF50)
                 PatientStatus.TREATED -> Color(0xFF2196F3)
                 PatientStatus.TRANSFERRED -> Color(0xFFFF9800)
+                PatientStatus.DECEASED -> Color(0xFF424242)
             }
             
             Card(
